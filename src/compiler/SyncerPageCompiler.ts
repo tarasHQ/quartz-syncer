@@ -430,7 +430,7 @@ export class SyncerPageCompiler {
 							if (
 								linkedFile &&
 								SyncerPageCompiler.ASSET_EXTENSIONS.has(
-									linkedFile.extension,
+									linkedFile.extension.toLowerCase(),
 								)
 							) {
 								assets.push(linkedFile.path);
@@ -462,7 +462,7 @@ export class SyncerPageCompiler {
 
 					if (
 						!SyncerPageCompiler.ASSET_EXTENSIONS.has(
-							linkedFile.extension,
+							linkedFile.extension.toLowerCase(),
 						)
 					) {
 						continue;
@@ -492,7 +492,7 @@ export class SyncerPageCompiler {
 
 				if (
 					!SyncerPageCompiler.ASSET_EXTENSIONS.has(
-						linkedFile.extension,
+						linkedFile.extension.toLowerCase(),
 					)
 				) {
 					continue;
@@ -532,7 +532,7 @@ export class SyncerPageCompiler {
 
 					if (
 						!SyncerPageCompiler.ASSET_EXTENSIONS.has(
-							linkedFile.extension,
+							linkedFile.extension.toLowerCase(),
 						)
 					) {
 						continue;
@@ -673,7 +673,7 @@ export class SyncerPageCompiler {
 
 				if (
 					!SyncerPageCompiler.ASSET_EXTENSIONS.has(
-						linkedFile.extension,
+						linkedFile.extension.toLowerCase(),
 					)
 				) {
 					continue;

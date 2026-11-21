@@ -4,6 +4,7 @@
 
 - Obsidian comments (`%% like this %%`) are kept in published Markdown instead of being stripped.
 - *Tries* to preserve new lines situation 1:1 to obsidian live preview.
+- `.avif` support + a dep-patch in my taras.life quartz repo, so quartz shows embeds instead of links. 
 
 ## Description
 
