@@ -3,6 +3,7 @@
 ## Custom changes
 
 - Obsidian comments (`%% like this %%`) are kept in published Markdown instead of being stripped.
+- *Tries* to preserve new lines situation 1:1 to obsidian live preview.
 
 ## Description
 
