@@ -257,6 +257,55 @@ export class SyncerPageCompiler {
 				bullet: "-",
 				emphasis: "_",
 				rule: "-",
+				join: [
+					(left, right, parent) => {
+						if (parent.type !== "root") return;
+
+						// Keep remark's separator for code that could merge with a
+						// preceding list or code block when serialized.
+						if (
+							right.type === "code" &&
+							(left.type === "list" || left.type === "code")
+						)
+							return;
+
+						const start = left.position?.end.offset;
+						const end = right.position?.start.offset;
+						if (
+							start === undefined ||
+							end === undefined ||
+							end < start
+						)
+							return;
+
+						const gap = text.slice(start, end);
+						if (!/^[\t \r\n]+$/.test(gap)) return;
+						const lineBreaks =
+							gap.match(/\r\n|\r|\n/g)?.length ?? 0;
+						if (lineBreaks === 0) return;
+
+						// A single newline is not safe for every pair of blocks:
+						// for example, paragraphs can merge when read again.
+						if (
+							lineBreaks === 1 &&
+							left.type !== "comment" &&
+							right.type !== "comment" &&
+							!(
+								left.type === "heading" &&
+								(right.type === "heading" ||
+									right.type === "paragraph")
+							) &&
+							!(
+								left.type === "paragraph" &&
+								right.type === "heading"
+							) &&
+							left.type !== "yaml"
+						)
+							return;
+
+						return lineBreaks - 1;
+					},
+				],
 			});
 
 		try {

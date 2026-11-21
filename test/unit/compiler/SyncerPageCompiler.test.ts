@@ -228,6 +228,66 @@ describe("SyncerPageCompiler", () => {
 		});
 	});
 
+	describe("astTransform — top-level line spacing", () => {
+		it("keeps a heading, comment, and paragraph on consecutive lines", async () => {
+			const { compiler } = makeCompiler();
+			const file = makeMockPublishFile();
+			const input =
+				"## OVERVIEW\n%%Journal comment%%\nOVERVIEW_FOR_VIDEO";
+
+			const result = await compiler.astTransform(file)(input);
+
+			expect(result).toBe(
+				"## OVERVIEW\n%%Journal comment%%\nOVERVIEW\\_FOR\\_VIDEO\n",
+			);
+		});
+
+		it("keeps intentional blank lines around comments", async () => {
+			const { compiler } = makeCompiler();
+			const file = makeMockPublishFile();
+			const input = "## Heading\n\n%%Comment%%\n\n\nText";
+
+			expect(await compiler.astTransform(file)(input)).toBe(input + "\n");
+		});
+
+		it("keeps spacing between headings and paragraphs without comments", async () => {
+			const { compiler } = makeCompiler();
+			const file = makeMockPublishFile();
+			const input = "## Heading\nText\n\n\n## Next\nMore";
+
+			expect(await compiler.astTransform(file)(input)).toBe(input + "\n");
+		});
+
+		it("keeps spacing around a multiline comment", async () => {
+			const { compiler } = makeCompiler();
+			const file = makeMockPublishFile();
+			const input = "## Heading\n%%\nFirst line\nSecond line\n%%\n\nText";
+
+			expect(await compiler.astTransform(file)(input)).toBe(input + "\n");
+		});
+
+		it("counts Windows line endings as single line breaks", async () => {
+			const { compiler } = makeCompiler();
+			const file = makeMockPublishFile();
+
+			const result = await compiler.astTransform(file)(
+				"## Heading\r\n%%Comment%%\r\n\r\nText",
+			);
+
+			expect(result).toBe("## Heading\n%%Comment%%\n\nText\n");
+		});
+
+		it("keeps the spacing through full Markdown generation", async () => {
+			const { compiler } = makeCompiler();
+			const input = "## Heading\n%%Comment%%\nText";
+			const file = makeMockPublishFile({ cachedReadValue: input });
+
+			const [result] = await compiler.generateMarkdown(file);
+
+			expect(result).toBe(input + "\n");
+		});
+	});
+
 	describe("generateMarkdown — comment preservation", () => {
 		it("keeps complete comments in published Markdown", async () => {
 			const { compiler } = makeCompiler();
