@@ -12,8 +12,12 @@ import remarkStringify from "remark-stringify";
 import remarkFrontmatter from "remark-frontmatter";
 import remarkObsidian, {
 	collectEmbedPaths,
+	commentSyntax,
+	commentFromMarkdown,
+	commentToMarkdown,
 } from "@quartz-community/remark-obsidian";
 import type { Root, Link, Image } from "mdast";
+
 import { visit } from "unist-util-visit";
 import { PublishFile } from "src/publishFile/PublishFile";
 import { PluginCompiler } from "src/compiler/PluginCompiler";
@@ -22,6 +26,14 @@ import {
 	getPerfMetrics,
 	perfMetricsEnabled,
 } from "src/operability/PerfMetrics";
+
+/** Register comment parsing and formatting without the comment-removal transform. */
+function preserveObsidianComments(this: ReturnType<typeof unified>): void {
+	const data = this.data();
+	(data.micromarkExtensions ??= []).push(commentSyntax());
+	(data.fromMarkdownExtensions ??= []).push(commentFromMarkdown());
+	(data.toMarkdownExtensions ??= []).push(commentToMarkdown());
+}
 
 /**
  * A cached asset reference. Bytes are read only when publishing.
@@ -222,11 +234,7 @@ export class SyncerPageCompiler {
 		return text;
 	}
 
-	/**
-	 * AST-based transform step.
-	 * Parses text with remark-obsidian, strips comments (built-in tree transform),
-	 * and strips vault path prefix from link/image URLs.
-	 */
+	/** Parse generated output for asset discovery without including comments. */
 	private parseForEmbedScan(text: string): Root {
 		return unified()
 			.use(remarkParse)
@@ -235,6 +243,7 @@ export class SyncerPageCompiler {
 			.parse(text);
 	}
 
+	/** Preserve Obsidian comments and strip vault path prefixes from link/image URLs. */
 	astTransform: TCompilerStep = (file) => async (text) => {
 		const vaultPath = this.settings.vaultPath;
 		const hasVaultPath = vaultScope(vaultPath) !== "";
@@ -242,7 +251,8 @@ export class SyncerPageCompiler {
 		const processor = unified()
 			.use(remarkParse)
 			.use(remarkFrontmatter, ["yaml"])
-			.use(remarkObsidian)
+			.use(remarkObsidian, { comments: false })
+			.use(preserveObsidianComments)
 			.use(remarkStringify, {
 				bullet: "-",
 				emphasis: "_",

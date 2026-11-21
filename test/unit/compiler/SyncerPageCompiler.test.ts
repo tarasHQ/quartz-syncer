@@ -115,6 +115,7 @@ function makeMockPublishFile(
 		getFrontmatter: vi.fn().mockReturnValue(overrides.frontmatter ?? {}),
 		getMetadata: vi.fn().mockReturnValue({}),
 		getBlock: vi.fn().mockReturnValue(undefined),
+		correctDynamicContentAfterCompile: vi.fn(),
 		meta: {
 			getCreatedAt: vi.fn().mockReturnValue(null),
 			getUpdatedAt: vi.fn().mockReturnValue(null),
@@ -130,8 +131,8 @@ function makeMockPublishFile(
 }
 
 describe("SyncerPageCompiler", () => {
-	describe("astTransform — comment stripping", () => {
-		it("removes a single-line comment", async () => {
+	describe("astTransform — comment preservation", () => {
+		it("preserves a single-line comment and its delimiters", async () => {
 			const { compiler } = makeCompiler();
 			const file = makeMockPublishFile();
 
@@ -139,10 +140,10 @@ describe("SyncerPageCompiler", () => {
 				"Hello %%hidden%% world",
 			);
 
-			expect(result.trim()).toBe("Hello  world");
+			expect(result.trim()).toBe("Hello %%hidden%% world");
 		});
 
-		it("removes a multi-line comment", async () => {
+		it("preserves a multi-line comment and its delimiters", async () => {
 			const { compiler } = makeCompiler();
 			const file = makeMockPublishFile();
 
@@ -152,7 +153,7 @@ describe("SyncerPageCompiler", () => {
 
 			expect(result).toContain("Before");
 			expect(result).toContain("After");
-			expect(result).not.toContain("multiline comment");
+			expect(result).toContain("%%\nThis is a\nmultiline comment\n%%");
 		});
 
 		it("preserves comments inside code blocks", async () => {
@@ -188,7 +189,7 @@ describe("SyncerPageCompiler", () => {
 			expect(result.trim()).toBe("No comments here, just text.");
 		});
 
-		it("removes multiple comments in one text", async () => {
+		it("preserves multiple comments in one text", async () => {
 			const { compiler } = makeCompiler();
 			const file = makeMockPublishFile();
 
@@ -199,8 +200,8 @@ describe("SyncerPageCompiler", () => {
 			expect(result).toContain("A");
 			expect(result).toContain("B");
 			expect(result).toContain("C");
-			expect(result).not.toContain("one");
-			expect(result).not.toContain("two");
+			expect(result).toContain("%%one%%");
+			expect(result).toContain("%%two%%");
 		});
 
 		it("preserves comments inside inline code", async () => {
@@ -214,7 +215,7 @@ describe("SyncerPageCompiler", () => {
 			expect(result).toContain("`%%comment%%`");
 		});
 
-		it("removes comments at end of line", async () => {
+		it("preserves comments at end of line", async () => {
 			const { compiler } = makeCompiler();
 			const file = makeMockPublishFile();
 
@@ -223,7 +224,20 @@ describe("SyncerPageCompiler", () => {
 			);
 
 			expect(result).toContain("Text before");
-			expect(result).not.toContain("hidden");
+			expect(result).toContain("%%hidden%%");
+		});
+	});
+
+	describe("generateMarkdown — comment preservation", () => {
+		it("keeps complete comments in published Markdown", async () => {
+			const { compiler } = makeCompiler();
+			const file = makeMockPublishFile({
+				cachedReadValue: "Before %% like this %% after",
+			});
+
+			const [result] = await compiler.generateMarkdown(file);
+
+			expect(result).toContain("Before %% like this %% after");
 		});
 	});
 

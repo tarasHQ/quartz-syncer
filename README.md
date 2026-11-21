@@ -1,5 +1,11 @@
 # Quartz Syncer
 
+## Custom changes
+
+- Obsidian comments (`%% like this %%`) are kept in published Markdown instead of being stripped.
+
+## Description
+
 Quartz Syncer is an [Obsidian](https://obsidian.md/) plugin for managing and publishing notes to [Quartz](https://quartz.jzhao.xyz/), the fast, batteries-included static-site generator that transforms Markdown content into fully functional websites.
 
 ## Features
