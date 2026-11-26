@@ -258,6 +258,40 @@ describe("SyncerPageCompiler", () => {
 			expect(await compiler.astTransform(file)(input)).toBe(input + "\n");
 		});
 
+		it("keeps heading and list boundaries without inserting blank lines", async () => {
+			const { compiler } = makeCompiler();
+			const file = makeMockPublishFile();
+			const input = [
+				"## Meta-Plan Reflection",
+				"%%Plan structure and workflows%%",
+				"### User-issues",
+				"- 1",
+				"### LLM-issues",
+				'- Where LLM had troubles with this "system of projects"?',
+				"\t- 1",
+			].join("\n");
+
+			const result = await compiler.astTransform(file)(input);
+
+			expect(result).toBe(input.replace("\t- 1", "  - 1") + "\n");
+		});
+
+		it("keeps intentional blank lines around lists", async () => {
+			const { compiler } = makeCompiler();
+			const file = makeMockPublishFile();
+			const input = "## Heading\n\n- item\n\n\n## Next";
+
+			expect(await compiler.astTransform(file)(input)).toBe(input + "\n");
+		});
+
+		it("keeps adjacent frontmatter delimiters and a thematic break", async () => {
+			const { compiler } = makeCompiler();
+			const file = makeMockPublishFile();
+			const input = "---\n---\n---\n\n## Heading";
+
+			expect(await compiler.astTransform(file)(input)).toBe(input + "\n");
+		});
+
 		it("keeps spacing around a multiline comment", async () => {
 			const { compiler } = makeCompiler();
 			const file = makeMockPublishFile();
@@ -802,6 +836,20 @@ describe("SyncerPageCompiler", () => {
 			expect(result).toContain("title: Test");
 			expect(result).toContain("Body content here.");
 			expect(result).not.toContain("draft: true");
+		});
+
+		it("does not add a newline after replaced frontmatter", () => {
+			const { compiler } = makeCompiler();
+			const file = makeMockPublishFile({
+				compiledFrontmatter: "---\npublish: true\n---\n",
+			});
+
+			for (const gap of ["\n", "\n\n", "\n\n\n"]) {
+				const input = `---\ndraft: true\n---${gap}Body`;
+				expect(compiler.convertFrontMatter(file)(input)).toBe(
+					`---\npublish: true\n---${gap}Body`,
+				);
+			}
 		});
 
 		it("returns text unchanged when no frontmatter exists", () => {

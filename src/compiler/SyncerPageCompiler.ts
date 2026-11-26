@@ -293,10 +293,12 @@ export class SyncerPageCompiler {
 							!(
 								left.type === "heading" &&
 								(right.type === "heading" ||
-									right.type === "paragraph")
+									right.type === "paragraph" ||
+									right.type === "list")
 							) &&
 							!(
-								left.type === "paragraph" &&
+								(left.type === "paragraph" ||
+									left.type === "list") &&
 								right.type === "heading"
 							) &&
 							left.type !== "yaml"
@@ -356,7 +358,17 @@ export class SyncerPageCompiler {
 	convertFrontMatter: TCompilerStep = (file) => (text) => {
 		const compiledFrontmatter = file.getCompiledFrontmatter(text);
 
-		return text.replace(FRONTMATTER_REGEX, () => compiledFrontmatter);
+		return text.replace(
+			FRONTMATTER_REGEX,
+			(match: string, _yaml: string, offset: number) => {
+				// The match excludes the following newline, while the compiled
+				// replacement normally includes one. Do not add an extra line.
+				if (/^(?:\r\n|\r|\n)/.test(text.slice(offset + match.length))) {
+					return compiledFrontmatter.replace(/(?:\r\n|\r|\n)$/, "");
+				}
+				return compiledFrontmatter;
+			},
+		);
 	};
 
 	/**
